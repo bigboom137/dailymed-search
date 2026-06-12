@@ -556,7 +556,7 @@
 </main>
 
 <script>
-const PROXY = 'https://api.codetabs.com/v1/proxy?quest=';
+const PROXY = 'https://corsproxy.org/?';
 const DAILYMED_BASE = 'https://dailymed.nlm.nih.gov/dailymed/services/v2';
 
 let allDrugs = [];
@@ -594,30 +594,25 @@ function hideError() {
 }
 
 async function fetchJSON(url) {
-  // Try direct first, fall back to CORS proxy
+  // On GitHub Pages, direct fetch will always fail CORS. Go straight to proxy or use it as fallback:
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const proxied = PROXY + url;
+    const r = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
     return await r.json();
   } catch (e) {
-    // Try via proxy
-    const proxied = PROXY + encodeURIComponent(url);
-    const r2 = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
-    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-    return await r2.json();
+    throw new Error(`API Connection Failed: ${e.message}. The public proxy might be throttled.`);
   }
 }
 
 async function fetchXML(url) {
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const proxied = PROXY + url;
+    const r = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
     return await r.text();
   } catch (e) {
-    const proxied = PROXY + encodeURIComponent(url);
-    const r2 = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
-    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-    return await r2.text();
+    throw new Error(`XML Retrieval Failed: ${e.message}`);
   }
 }
 
