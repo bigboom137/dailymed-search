@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DailyMed Excipient Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8edf3;
+    --border: #c8d3de;
+    --border-strong: #8fa3b8;
+    --text: #1a2733;
+    --text-sub: #4a6070;
+    --text-muted: #7a95a8;
+    --accent: #005b99;
+    --accent-light: #e0eef8;
+    --accent-hover: #004478;
+    --green: #0a7c4a;
+    --green-light: #d4f0e4;
+    --red: #c0392b;
+    --red-light: #fde8e6;
+    --tag-bg: #dbe8f5;
+    --tag-text: #1a4f78;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 56px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  header .logo {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  header .logo-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  header .subtitle {
+    margin-left: auto;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: 300;
+  }
+
+  /* SEARCH ZONE */
+  .search-zone {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+  }
+  .search-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .search-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    max-width: 900px;
+  }
+  .search-input-wrap {
+    flex: 1;
+    position: relative;
+  }
+  .search-input-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.65rem 1rem 0.65rem 2.5rem;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,91,153,0.12);
+    background: white;
+  }
+  .pages-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pages-select-wrap label {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    white-space: nowrap;
+  }
+  select {
+    padding: 0.65rem 0.5rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus {
+    border-color: var(--accent);
+  }
+  .search-btn {
+    padding: 0.65rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .search-btn:hover:not(:disabled) { background: var(--accent-hover); }
+  .search-btn:active:not(:disabled) { transform: scale(0.98); }
+  .search-btn:disabled { background: var(--border-strong); cursor: not-allowed; }
+
+  .quick-chips {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .quick-chips span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .chip {
+    padding: 3px 10px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .chip:hover { border-color: var(--accent); background: var(--accent-light); }
+
+  /* MAIN */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    min-height: 28px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  .status-dot.done { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{ opacity:1 } 50%{ opacity:0.4 } }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+
+  /* ERROR BOX */
+  .error-box {
+    background: var(--red-light);
+    border: 1px solid #f0b4ae;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--red);
+    display: none;
+    margin-bottom: 1rem;
+  }
+  .error-box.visible { display: block; }
+
+  /* RESULTS HEADER */
+  .results-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .results-count {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .results-count strong { color: var(--accent); }
+
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .filter-input {
+    padding: 0.35rem 0.7rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    width: 200px;
+    transition: border-color 0.15s;
+  }
+  .filter-input:focus { border-color: var(--accent); }
+
+  .export-btn {
+    padding: 0.35rem 0.85rem;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .export-btn:hover { background: #065c38; }
+
+  /* DRUG CARDS */
+  .drug-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .drug-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .drug-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+
+  .drug-header {
+    padding: 0.85rem 1.1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .drug-header:hover { background: var(--bg); }
+  .drug-card.open .drug-header {
+    background: var(--accent-light);
+    border-bottom-color: var(--border);
+  }
+
+  .drug-number {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border-radius: 3px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .drug-info { flex: 1; min-width: 0; }
+  .drug-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+  }
+  .drug-meta-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .drug-tag {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    padding: 1px 7px;
+    border-radius: 3px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+  }
+  .drug-tag.date { background: var(--surface2); color: var(--text-muted); }
+
+  .expand-icon {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .drug-card.open .expand-icon { transform: rotate(180deg); }
+
+  /* EXCIPIENTS PANEL */
+  .excipients-panel {
+    display: none;
+    padding: 1rem 1.1rem;
+    border-top: 1px solid var(--border);
+  }
+  .drug-card.open .excipients-panel { display: block; }
+
+  .excipients-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-sub);
+  }
+  .mini-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .excipients-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .excipient-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .excipient-pill {
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-sub);
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .excipient-pill:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .excipient-pill.highlight {
+    background: var(--green-light);
+    border-color: #6ec99e;
+    color: var(--green);
+  }
+
+  .none-found {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .error-inline {
+    font-size: 0.8rem;
+    color: var(--red);
+  }
+
+  .spl-link {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+  }
+  .spl-link a {
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: color 0.12s;
+  }
+  .spl-link a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+  .empty-state svg { margin-bottom: 1rem; opacity: 0.3; }
+  .empty-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-sub); }
+  .empty-state p { font-size: 0.85rem; }
+
+  /* FOOTER NOTE */
+  .footer-note {
+    margin-top: 2rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .footer-note strong { color: var(--text-sub); }
+
+  /* Scrollable excipients for long lists */
+  .excipient-pills-wrap {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; }
+    .search-zone { padding: 1rem; }
+    main { padding: 1rem; }
+    .search-row { flex-wrap: wrap; }
+    .search-btn { width: 100%; justify-content: center; }
+    .results-meta { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .filter-input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+    DailyMed Excipient Explorer
+    <span class="logo-badge">NIH API</span>
+  </div>
+  <span class="subtitle">FDA Structured Product Labels · Inactive Ingredient Lookup</span>
+</header>
+
+<div class="search-zone">
+  <div class="search-label">Search drug labels by name or keyword</div>
+  <div class="search-row">
+    <div class="search-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder='e.g. "long-acting injectable" or "risperidone"' value="" autocomplete="off" />
+    </div>
+    <div class="pages-select-wrap">
+      <label for="pageCount">Pages:</label>
+      <select id="pageCount">
+        <option value="1">1 (≤100)</option>
+        <option value="3" selected>3 (≤300)</option>
+        <option value="5">5 (≤500)</option>
+        <option value="10">10 (≤1000)</option>
+      </select>
+    </div>
+    <button class="search-btn" id="searchBtn" onclick="startSearch()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Search
+    </button>
+  </div>
+  <div class="quick-chips">
+    <span>Try:</span>
+    <div class="chip" onclick="setAndSearch('long-acting injectable')">long-acting injectable</div>
+    <div class="chip" onclick="setAndSearch('extended release suspension')">extended release suspension</div>
+    <div class="chip" onclick="setAndSearch('paliperidone palmitate')">paliperidone palmitate</div>
+    <div class="chip" onclick="setAndSearch('depot injection')">depot injection</div>
+    <div class="chip" onclick="setAndSearch('microsphere injectable')">microsphere injectable</div>
+  </div>
+</div>
+
+<main>
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Enter a search term above to begin.</span>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="resultsArea"></div>
+</main>
+
+<script>
+const PROXY = '/api/proxy?url=';
+const DAILYMED_BASE = 'https://dailymed.nlm.nih.gov/dailymed/services/v2';
+
+let allDrugs = [];
+let excipientCache = {};
+let filterText = '';
+let isSearching = false;
+
+function setAndSearch(term) {
+  document.getElementById('searchInput').value = term;
+  startSearch();
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  dot.className = 'status-dot ' + state;
+  statusText.textContent = text;
+}
+
+function setProgress(pct, visible = true) {
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  wrap.classList.toggle('visible', visible);
+  bar.style.width = pct + '%';
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.remove('visible');
+}
+
+async function fetchJSON(url) {
+  // On GitHub Pages, direct fetch will always fail CORS. Go straight to proxy or use it as fallback:
+  try {
+    const proxied = PROXY + url;
+    const r = await fetch(proxied, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
+    return await r.json();
+  } catch (e) {
+    throw new Error(`API Connection Failed: ${e.message}. The public proxy might be throttled.`);
+  }
+}
+
+async function fetchXML(url) {
+  try {
+    const proxied = PROXY + url;
+    const r = await fetch(proxied, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error(`Proxy HTTP ${r.status}`);
+    return await r.text();
+  } catch (e) {
+    throw new Error(`XML Retrieval Failed: ${e.message}`);
+  }
+}
+
+async function startSearch() {
+  if (isSearching) return;
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) { showError('Please enter a search term.'); return; }
+
+  isSearching = true;
+  hideError();
+  allDrugs = [];
+  excipientCache = {};
+  document.getElementById('resultsArea').innerHTML = '';
+  document.getElementById('searchBtn').disabled = true;
+
+  const maxPages = parseInt(document.getElementById('pageCount').value);
+
+  try {
+    setStatus('loading', `Searching DailyMed for "${query}"…`);
+    setProgress(5);
+
+    // Fetch page 1 to get total
+    const page1url = `${DAILYMED_BASE}/spls.json?drug_name=${encodeURIComponent(query)}&pagesize=100&page=1`;
+    let data;
+    try {
+      data = await fetchJSON(page1url);
+    } catch (e) {
+      throw new Error('Could not reach DailyMed API. Check your internet connection or try again.');
+    }
+
+    const totalPages = Math.min(parseInt(data.metadata?.total_pages || 1), maxPages);
+    const totalElements = parseInt(data.metadata?.total_elements || 0);
+
+    if (!data.data || data.data.length === 0) {
+      setStatus('done', 'No results found.');
+      setProgress(0, false);
+      renderEmpty(query);
+      return;
+    }
+
+    allDrugs = data.data || [];
+    setProgress(20);
+    setStatus('loading', `Found ${totalElements} labels across ${totalPages} page(s). Loading…`);
+
+    // Fetch remaining pages in parallel (batches of 3)
+    if (totalPages > 1) {
+      const pageNums = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+      const batches = [];
+      for (let i = 0; i < pageNums.length; i += 3) {
+        batches.push(pageNums.slice(i, i + 3));
+      }
+      let done = 1;
+      for (const batch of batches) {
+        const results = await Promise.allSettled(batch.map(p =>
+          fetchJSON(`${DAILYMED_BASE}/spls.json?drug_name=${encodeURIComponent(query)}&pagesize=100&page=${p}`)
+        ));
+        results.forEach(r => {
+          if (r.status === 'fulfilled' && r.value.data) {
+            allDrugs.push(...r.value.data);
+          }
+        });
+        done += batch.length;
+        setProgress(20 + (done / totalPages) * 30);
+      }
+    }
+
+    setProgress(55);
+    setStatus('loading', `Loaded ${allDrugs.length} labels. Deduplicating…`);
+
+    // Deduplicate by drug name (keep most recent per unique title prefix)
+    const seen = new Map();
+    for (const drug of allDrugs) {
+      const key = drug.title?.toLowerCase().trim();
+      if (!seen.has(key)) seen.set(key, drug);
+    }
+    allDrugs = Array.from(seen.values());
+
+    setProgress(65);
+    setStatus('done', `Showing ${allDrugs.length} unique labels for "${query}"`);
+    setProgress(100);
+    setTimeout(() => setProgress(0, false), 600);
+
+    renderResults();
+
+  } catch (err) {
+    setStatus('error', 'Search failed.');
+    showError(err.message || 'An error occurred. Please try again.');
+    setProgress(0, false);
+  } finally {
+    isSearching = false;
+    document.getElementById('searchBtn').disabled = false;
+  }
+}
+
+function renderEmpty(query) {
+  document.getElementById('resultsArea').innerHTML = `
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6M11 8v6"/></svg>
+      <h3>No results for "${escapeHtml(query)}"</h3>
+      <p>Try broader terms, check spelling, or use one of the quick-search chips above.</p>
+    </div>`;
+}
+
+function renderResults() {
+  const area = document.getElementById('resultsArea');
+  const filtered = filterText
+    ? allDrugs.filter(d => d.title?.toLowerCase().includes(filterText.toLowerCase()))
+    : allDrugs;
+
+  if (filtered.length === 0) {
+    area.innerHTML = `<div class="empty-state"><h3>No matches for filter "${escapeHtml(filterText)}"</h3></div>`;
+    return;
+  }
+
+  let html = `
+    <div class="results-meta">
+      <div class="results-count">
+        Showing <strong>${filtered.length}</strong> of ${allDrugs.length} labels
+      </div>
+      <div class="filter-row">
+        <input class="filter-input" type="text" id="filterInput" placeholder="Filter by name…" value="${escapeHtml(filterText)}" oninput="applyFilter(this.value)" />
+        <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+    <div class="drug-list">
+  `;
+
+  filtered.forEach((drug, idx) => {
+    html += renderDrugCard(drug, idx + 1);
+  });
+
+  html += `</div>
+    <div class="footer-note">
+      <strong>Data source:</strong> U.S. National Library of Medicine · DailyMed (dailymed.nlm.nih.gov) · FDA Structured Product Labels.
+      Inactive ingredients are extracted from the SPL XML &lt;inactiveIngredient&gt; elements.
+      Click any drug card to load its excipients on demand. Search is by drug name via the DailyMed v2 API.
+    </div>`;
+
+  area.innerHTML = html;
+}
+
+function renderDrugCard(drug, num) {
+  const title = drug.title || 'Unknown Drug';
+  const setid = drug.setid;
+  const version = drug.spl_version ? `v${drug.spl_version}` : '';
+  const date = drug.published_date || '';
+
+  return `
+    <div class="drug-card" id="card-${setid}">
+      <div class="drug-header" onclick="toggleCard('${setid}')">
+        <span class="drug-number">#${num}</span>
+        <div class="drug-info">
+          <div class="drug-name">${escapeHtml(title)}</div>
+          <div class="drug-meta-row">
+            <span class="drug-tag">${escapeHtml(setid.split('-')[0])}…</span>
+            ${version ? `<span class="drug-tag">${version}</span>` : ''}
+            ${date ? `<span class="drug-tag date">${escapeHtml(date)}</span>` : ''}
+          </div>
+        </div>
+        <div class="expand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div class="excipients-panel" id="panel-${setid}">
+        <div class="excipients-loading" id="loading-${setid}">
+          <div class="mini-spinner"></div>
+          <span>Loading inactive ingredients from SPL…</span>
+        </div>
+        <div id="excipients-${setid}"></div>
+      </div>
+    </div>`;
+}
+
+function toggleCard(setid) {
+  const card = document.getElementById(`card-${setid}`);
+  const isOpen = card.classList.contains('open');
+
+  if (isOpen) {
+    card.classList.remove('open');
+    return;
+  }
+
+  card.classList.add('open');
+
+  // Only fetch if not already fetched
+  if (!excipientCache[setid]) {
+    loadExcipients(setid);
+  } else {
+    displayExcipients(setid, excipientCache[setid]);
+  }
+}
+
+async function loadExcipients(setid) {
+  try {
+    const xmlText = await fetchXML(`${DAILYMED_BASE}/spls/${setid}.xml`);
+    const excipients = parseInactiveIngredients(xmlText);
+    excipientCache[setid] = excipients;
+    displayExcipients(setid, excipients);
+  } catch (err) {
+    document.getElementById(`loading-${setid}`).style.display = 'none';
+    document.getElementById(`excipients-${setid}`).innerHTML =
+      `<div class="error-inline">Could not load label data: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function parseInactiveIngredients(xmlText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'text/xml');
+  const ingredients = new Set();
+
+  // Method 1: Look for inactiveIngredient elements
+  const inactiveEls = doc.querySelectorAll('inactiveIngredient');
+  inactiveEls.forEach(el => {
+    // Get name from ingredientSubstance/name
+    const nameEl = el.querySelector('ingredientSubstance name, activeMoiety name, name');
+    if (nameEl) {
+      const name = nameEl.textContent.trim();
+      if (name) ingredients.add(name);
+    }
+  });
+
+  // Method 2: Look in the label text sections for "Inactive Ingredients" heading
+  if (ingredients.size === 0) {
+    const allText = xmlText;
+    // Find section with inactive ingredients content title
+    const sectionRegex = /<section[^>]*>[\s\S]*?<title[^>]*>[^<]*[Ii]nactive\s+[Ii]ngredient[^<]*<\/title>([\s\S]*?)<\/section>/gi;
+    let match;
+    while ((match = sectionRegex.exec(allText)) !== null) {
+      // Parse the section content
+      const sectionXml = match[1];
+      const tempDoc = parser.parseFromString(`<root>${sectionXml}</root>`, 'text/xml');
+      const textNodes = tempDoc.querySelectorAll('paragraph, td, content');
+      textNodes.forEach(el => {
+        const t = el.textContent.trim();
+        // Split on common separators
+        if (t && t.length > 2 && t.length < 200) {
+          t.split(/[,;\/]+/).forEach(part => {
+            const cleaned = part.trim().replace(/\s+/g, ' ');
+            if (cleaned.length > 2 && cleaned.length < 120 && !/^\d/.test(cleaned)) {
+              ingredients.add(cleaned);
+            }
+          });
+        }
+      });
+    }
+  }
+
+  // Method 3: Look for ingredient elements with classCode="IACT"
+  if (ingredients.size === 0) {
+    const ingredientEls = doc.querySelectorAll('ingredient[classCode="IACT"]');
+    ingredientEls.forEach(el => {
+      const nameEl = el.querySelector('ingredientSubstance name, name');
+      if (nameEl) {
+        const name = nameEl.textContent.trim();
+        if (name) ingredients.add(name);
+      }
+    });
+  }
+
+  return Array.from(ingredients).filter(n => n.length > 1 && n.length < 200);
+}
+
+function displayExcipients(setid, excipients) {
+  document.getElementById(`loading-${setid}`).style.display = 'none';
+  const container = document.getElementById(`excipients-${setid}`);
+
+  if (!excipients || excipients.length === 0) {
+    container.innerHTML = `
+      <div class="excipients-label">Inactive Ingredients</div>
+      <div class="none-found">No inactive ingredients found in this label, or this label type does not list excipients.</div>
+      <div class="spl-link">
+        <a href="https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=${escapeHtml(setid)}" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          View full label on DailyMed
+        </a>
+      </div>`;
+    return;
+  }
+
+  const pills = excipients.map(e =>
+    `<span class="excipient-pill" title="${escapeHtml(e)}">${escapeHtml(e)}</span>`
+  ).join('');
+
+  container.innerHTML = `
+    <div class="excipients-label">Inactive Ingredients (${excipients.length})</div>
+    <div class="excipient-pills-wrap">
+      <div class="excipient-pills">${pills}</div>
+    </div>
+    <div class="spl-link">
+      <a href="https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=${escapeHtml(setid)}" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        View full label on DailyMed
+      </a>
+    </div>`;
+}
+
+function applyFilter(val) {
+  filterText = val;
+  if (allDrugs.length > 0) renderResults();
+  // Restore filter input value since renderResults() rebuilds DOM
+  setTimeout(() => {
+    const fi = document.getElementById('filterInput');
+    if (fi) { fi.value = val; fi.focus(); fi.setSelectionRange(val.length, val.length); }
+  }, 0);
+}
+
+function exportCSV() {
+  if (allDrugs.length === 0) return;
+
+  const rows = [['#', 'Title', 'Set ID', 'SPL Version', 'Published Date', 'Inactive Ingredients']];
+  const filtered = filterText
+    ? allDrugs.filter(d => d.title?.toLowerCase().includes(filterText.toLowerCase()))
+    : allDrugs;
+
+  filtered.forEach((drug, i) => {
+    const excipients = excipientCache[drug.setid];
+    const excipStr = excipients ? excipients.join('; ') : '(not loaded)';
+    rows.push([
+      i + 1,
+      drug.title || '',
+      drug.setid || '',
+      drug.spl_version || '',
+      drug.published_date || '',
+      excipStr
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dailymed-excipients-${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startSearch();
+  });
+  // Pre-populate and search on load for demonstration
+  // Uncomment below to auto-search:
+  // document.getElementById('searchInput').value = 'long-acting injectable';
+  // startSearch();
+});
+</script>
+</body>
+</html>
